@@ -1,6 +1,6 @@
 # Earthquake Data Engineering Pipeline
 
-This project provides a robust data engineering pipeline for processing earthquake data using Azure, Databricks, and Azure Synapse Analytics. The pipeline automates data ingestion, processing, and storage into `bronze`, `silver`, and `gold` layers, making the data ready for analysis and visualization.
+This project provides a robust data engineering pipeline for processing earthquake data using Azure, Databricks, and Azure Synapse Analytics. The pipeline automates data ingestion, processing, and storage into `bronze`, `silver`, and `gold` layers, preparing the data for analysis and visualization.
 
 ---
 
@@ -12,7 +12,7 @@ Earthquake data is vital for understanding seismic events and mitigating risks. 
 - Assessing risks.
 - Making data-driven decisions.
 
-This automated pipeline ensures stakeholders receive reliable and accessible data, improving decision-making while saving time.
+By automating the processing and categorization of seismic data, this pipeline empowers stakeholders to predict, prepare for, and respond to earthquake events with precision and speed. This ensures timely and actionable insights that improve decision-making while saving time.
 
 ---
 
@@ -30,8 +30,7 @@ This automated pipeline ensures stakeholders receive reliable and accessible dat
 
 ### Prerequisites
 
-- An Azure account.
-- Basic knowledge of Azure services and Databricks.
+- Set up an Azure account
 
 ### Step 1: Create Required Azure Resources
 
@@ -57,6 +56,15 @@ This automated pipeline ensures stakeholders receive reliable and accessible dat
    - `bronze`: Raw data ingestion.
    - `silver`: Data cleansing and transformation.
    - `gold`: Aggregated and ready-to-query data.
+
+#### Key Vault vs. One-Time Access Keys
+
+While Azure Key Vault enhances security by centralizing and encrypting secrets, it can introduce complexity and potential points of failure if misconfigured. Using a one-time access key avoids this complexity but risks exposure if the key is stored insecurely. For production systems, Key Vault is preferred as it:
+- Simplifies secret rotation.
+- Reduces exposure to hardcoded secrets.
+- Centralizes access control.
+
+However, for one-time configurations in small-scale or personal projects, securely managing a one-time key may be simpler.
 
 Refer to the uploaded notebooks:
 - [Bronze Notebook](./Bronze%20Notebook.ipynb)
