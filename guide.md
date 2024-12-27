@@ -41,10 +41,11 @@ We implement a **medallion architecture** to structure and organize data effecti
 ## Chapter 2: Setting Up Your Environment
 
 1. **Create an Azure Account**: If you don’t already have one, sign up for an Azure account.
-2. **Provision a Databricks Resource**:
+https://azure.microsoft.com/en-gb
+3. **Provision a Databricks Resource**:
     - Use the trial version for testing (takes about 5 minutes).
     - Select the **Standard LTS (Long Term Support)** edition. Avoid options like ML.
-3. **Create a Storage Account**:
+4. **Create a Storage Account**:
     - Enable **Hierarchical Namespaces** in the advanced settings to support future data mounting.
     - Go to the Storage Account resource:
         1. Navigate to **Data Storage > Containers > + Containers**.
@@ -53,7 +54,7 @@ We implement a **medallion architecture** to structure and organize data effecti
             - Role: **Storage Blob Data Contributor**.
             - Managed Identity: **Access Connector for Azure Databricks**.
             - Assign the role and complete the setup.
-4. **Set Up Synapse Analytics Workspace**:
+5. **Set Up Synapse Analytics Workspace**:
     - Navigate to the Azure Portal.
     - Search for **Synapse Analytics** and click **+ Create**.
     - Provide the required details:
