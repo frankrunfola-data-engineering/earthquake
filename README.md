@@ -22,6 +22,7 @@ This automated pipeline ensures stakeholders receive reliable and accessible dat
 2. **Azure Data Factory**: For orchestrating data workflows.
 3. **Azure Data Lake Storage**: For scalable data storage in bronze, silver, and gold containers.
 4. **Azure Synapse Analytics**: For querying and analyzing processed data.
+![Data Engineering vs Software Engineering (6)](https://github.com/user-attachments/assets/21f7cf7a-d022-4a80-b0f6-eb1f705c6266)
 
 ---
 
