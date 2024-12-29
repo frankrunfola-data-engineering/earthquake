@@ -1,6 +1,6 @@
 # Earthquake Azure Data Engineering Pipeline: A Comprehensive Guide
 
-# Chapter 1: Overview and Architecture
+## Overview and Architecture
 
 ### Business Case
 
@@ -22,7 +22,7 @@ We implement a **medallion architecture** to structure and organize data effecti
 
 1. **Bronze Layer**: Raw data ingested directly from the API, stored in Parquet format for future reprocessing if needed.
 2. **Silver Layer**: Cleaned and normalized data, removing duplicates and handling missing values, ensuring it’s ready for analytics.
-3. **Gold Layer**: Aggregated and enriched data tailored to specific business needs, such as calculating earthquake severity counts by region.
+3. **Gold Layer**: Aggregated and enriched data tailored to specific business needs, such as adding in country codes.
 
 ### Understanding the API
 
@@ -38,129 +38,123 @@ We implement a **medallion architecture** to structure and organize data effecti
 
 ---
 
-## Chapter 2: Setting Up Your Environment
-
-1. **Create an Azure Account**: If you don’t already have one, sign up for an Azure account.
-https://azure.microsoft.com/en-gb
-3. **Provision a Databricks Resource**:
-    - Use the trial version for testing (takes about 5 minutes).
-    - Select the **Standard LTS (Long Term Support)** edition. Avoid options like ML.
-4. **Create a Storage Account**:
-    - Enable **Hierarchical Namespaces** in the advanced settings to support future data mounting.
-    - Go to the Storage Account resource:
-        1. Navigate to **Data Storage > Containers > + Containers**.
-        2. Create containers named **bronze**, **silver**, and **gold**.
-        3. Go to **IAM > Add Role Assignment**:
-            - Role: **Storage Blob Data Contributor**.
-            - Managed Identity: **Access Connector for Azure Databricks**.
-            - Assign the role and complete the setup.
-5. **Set Up Synapse Analytics Workspace**:
-    - Navigate to the Azure Portal.
-    - Search for **Synapse Analytics** and click **+ Create**.
-    - Provide the required details:
-        - Workspace name: `MySynapseWorkspace`.
-        - Use the previously created Storage Account (Data Lake Storage Gen2).
-        - Create a new file system and assign yourself as a contributor.
-    - Review and create the workspace.
+## Step 1: Create an Azure Account
+1. Sign up for an Azure account if you do not already have one.
 
 ---
 
-## Chapter 3: Configuring Databricks
-
-1. **Launch the Databricks Workspace**:
-    - Start a compute instance (this may take a few minutes).
-2. **Set Up External Data in Databricks**:
-    - Go to **Catalog > External Data > Credentials > Create Credential**.
-    - Use the **Resource ID** of the Access Connector:
-        - Search for the Access Connector in Azure.
-        - Copy the Resource ID.
-    - Grant permissions (optional: use the three dots menu for managing permissions).
-3. **Create External Locations**:
-    - Go to **External Data > External Locations**.
-    - Add a name, select the new storage credential, and input the URL for each container (**bronze**, **silver**, **gold**).
-4. **Create and Test Notebooks**:
-    - Navigate to **Workspace > Create Notebook**.
-    - Write and run code for the **bronze** container.
-    - Refresh the Storage Account containers to verify updates.
-    - Repeat for **silver** and **gold** notebooks.
+## Step 2: Create a Databricks Resource
+1. Create a Databricks resource in Azure.
+2. Select the **Standard LTS (Long Term Support)** tier. Avoid using ML or other specialized tiers.
 
 ---
 
-## Chapter 4: Optimizing Libraries and Performance
-
-1. **Install Libraries for Notebooks**:
-    - Use cluster-level libraries to ensure consistency across environments.
-    - Go to **Compute > Your Cluster > Libraries**.
-    - Source: **PyPI**, Name: `reverse_geocoder`.
-2. **Resolve Performance Issues**:
-    - Databricks may expose inefficiencies in UDFs due to its distributed execution.
-    - Replace Python UDFs with:
-        - **Precomputed lookup tables**.
-        - **Pandas UDFs** for vectorized execution.
-        - **Batch processing geocoding** outside of Spark.
+## Step 3: Set Up a Storage Account
+1. Create a Storage Account and enable **hierarchical namespaces** in the advanced settings.
+2. Navigate to the Storage Account resource:
+   - Go to **Data Storage > Containers > + Containers**.
+   - Create three containers: `bronze`, `silver`, and `gold`.
+3. Configure access:
+   - Go to **IAM > Add role assignment > Storage Blob Data Contributor**.
+   - Click **Next > Managed Identity > Select Members**.
+   - Select **Access Connector for Azure Databricks** as the managed identity.
+   - Click **Review + Assign**.
 
 ---
 
-## Chapter 5: Integrating Azure Data Factory (ADF)
-
-1. **Create an Azure Data Factory Resource**:
-    - Launch the ADF Studio.
-    - Create a new pipeline and add a Databricks notebook activity.
-2. **Set Up Linked Services**:
-    - Create a Databricks Linked Service:
-        - Select your subscription and workspace.
-        - Use an **Access Token** for authentication (generate in Databricks).
-    - Optionally, store the token in an Azure Key Vault for security.
-        - Assign roles like **Key Vault Secret Officer** and **Key Vault Secret User**.
-        - Create a Linked Service from ADF to the Key Vault.
-3. **Configure and Schedule Pipelines**:
-    - Define pipeline parameters such as `start_date` and `end_date`.
-    - Link the **bronze**, **silver**, and **gold** notebooks in sequence.
-    - Validate and publish the pipeline.
-    - Schedule triggers for automated runs.
+## Step 4: Configure Databricks
+1. Open the Databricks resource and click **Launch Workspace**.
+2. Start a compute instance (this may take a few minutes).
+3. Set up external data access:
+   - Go to **Catalog > External Data > Credentials > Create Credential**.
+   - For the **Access Connector ID**, use the Resource ID of the Access Connector:
+     - Search for **Access Connector**, copy the Resource ID, and paste it here.
+   - Use this section to grant permissions or delete credentials as needed.
+4. Define external locations:
+   - Navigate to **External Data > External Locations**.
+   - Assign a name, select the storage credential, and specify the URL (use the container name and storage account name for `bronze`, `silver`, and `gold`).
+5. For detailed steps, refer to this helpful video: [Pathfinder Analytics](https://www.youtube.com/watch?v=kRfNXFh9T3U).
 
 ---
 
-## Chapter 6: Querying and Analyzing Data in Synapse Analytics
+## Step 5: Create and Execute Notebooks
+1. In the Databricks workspace, create a notebook for each layer (`bronze`, `silver`, `gold`).
+   - Add the relevant code for `bronze` from GitHub.
+   - Execute the notebook and refresh the Storage Account containers to verify updates.
+   - Repeat the process for `silver` and `gold` notebooks, adding the corresponding code.
 
-1. **Set Up SQL Pools and Serverless SQL**:
-    - Open Synapse Studio.
-    - Create linked services for your Data Lake Storage.
+---
+
+## Step 6: Install Required Libraries
+1. Before running the `gold` notebook, install the `reverse_geocoder` library.
+   - Navigate to **Compute > Cluster > Libraries > + Install New Library**.
+   - Select **Source: PyPI** and enter **reverse_geocoder**.
+   - Wait a few minutes for the installation to complete.
+2. Use cluster-level libraries for consistency and shared environments across notebooks.
+
+---
+
+## Step 7: Optimize Gold Notebook Execution
+1. During execution, you may encounter performance bottlenecks with the `reverse_geocoder` Python UDF due to its non-thread-safe nature in distributed setups.
+   - Replace the UDF with alternatives like:
+     - **Precomputed lookup tables**.
+     - **Pandas UDFs for vectorized execution**.
+     - **Batch processing geocoding outside Spark**.
+
+---
+
+## Step 8: Set Up Azure Data Factory (ADF)
+1. Create a new Azure Data Factory instance (in a new Resource Group if needed).
+2. Launch the ADF studio and create a pipeline:
+   - Drag the **Notebook** activity into the pipeline and configure it to run Databricks notebooks.
+   - Add a **Databricks Linked Service**:
+     - Use the **AutoResolveIntegrationRuntime**.
+     - Authenticate with an Access Token (recommended to store the token in a Key Vault for security).
+3. Pass parameters to the pipeline:
+   - For example, add parameters `start_date` and `end_date` with dynamic values using `@formatDateTime` expressions.
+4. Chain notebooks (`bronze`, `silver`, `gold`) to create a pipeline with success dependencies.
+5. Validate, publish, and run the pipeline.
+6. Schedule the pipeline to run at desired intervals (e.g., daily).
+
+---
+
+## Step 9: Integrate Azure Synapse Analytics
+1. **Create a Synapse Workspace**:
+   - Link it to the existing Storage Account.
+   - Configure a file system and assign necessary permissions.
 2. **Query Data Using Serverless SQL**:
-    - Navigate to the `bronze`, `silver`, and `gold` containers.
-    - Use SQL scripts to query the data, e.g.,
-        
-        ```
-        SELECT
-            country_code,
-            COUNT(CASE WHEN LOWER(sig_class) = 'low' THEN 1 END) AS low_count,
-            COUNT(CASE WHEN LOWER(sig_class) IN ('medium', 'moderate') THEN 1 END) AS medium_count,
-            COUNT(CASE WHEN LOWER(sig_class) = 'high' THEN 1 END) AS high_count
-        FROM
-            OPENROWSET(
-                BULK 'https://storageaccount.dfs.core.windows.net/gold/earthquake_events_gold/**',
-                FORMAT = 'PARQUET'
-            ) AS [result]
-        GROUP BY
-            country_code;
-        ```
-        
-3. **Optimize Performance**:
-    - Use indexing, partitioning, and caching for faster queries.
+   - Use `OPENROWSET` to query Parquet files stored in `bronze`, `silver`, and `gold` containers.
+   - Example query:
+     ```sql
+     SELECT
+         country_code,
+         COUNT(CASE WHEN LOWER(sig_class) = 'low' THEN 1 END) AS low_count,
+         COUNT(CASE WHEN LOWER(sig_class) IN ('medium', 'moderate') THEN 1 END) AS medium_count,
+         COUNT(CASE WHEN LOWER(sig_class) = 'high' THEN 1 END) AS high_count
+     FROM
+         OPENROWSET(
+             BULK 'https://<storage_account>.dfs.core.windows.net/gold/earthquake_events_gold/**',
+             FORMAT = 'PARQUET'
+         ) AS [result]
+     GROUP BY
+         country_code;
+     ```
+3. **Create External Tables** for structured access:
+   - Define external tables linked to the `gold` container for better organization and performance.
+4. **Optimize Performance**:
+   - Use indexing, partitioning, and caching as required.
 
 ---
 
-## Chapter 7: Optional Integration with Power BI
-
-1. **Connect Power BI to Synapse**:
-    - Open Power BI Desktop and select **Get Data > Azure Synapse Analytics**.
-    - Use the Synapse SQL endpoint for querying.
-2. **Visualize Data**:
-    - Import external tables or queries into Power BI.
-    - Create dashboards and reports for insights.
+## Step 10: Visualization Options
+1. While Power BI can be used, it is not ideal for Mac users. Instead, consider using Synapse SQL for analytics and queries.
+2. Export data for further visualization or reporting if needed.
 
 ---
 
-## Conclusion
+## Key Considerations
+- **Linked Services**: Ensure reusable and secure connections between Azure services.
+- **Scalability**: Use Synapse for querying large datasets efficiently.
+- **Data Engineering Focus**: Maintain an emphasis on structured pipelines and optimized workflows.
 
-This guide provides a step-by-step approach to building a robust Azure data engineering pipeline. By integrating Databricks, Synapse Analytics, and ADF, you can process, analyze, and visualize data efficiently, ensuring best practices and scalability.
+This guide provides a comprehensive approach to setting up a professional-grade Azure Databricks and Synapse workflow for data engineering.
