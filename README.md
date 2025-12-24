@@ -66,9 +66,9 @@ This guide walks you through creating a scalable data pipeline in Azure, transfo
      - Node type: `General purpose` lowest (ie 14 GB Memory, 4 Cores)
      - [X] Terminate after 20 minutes
    5. Click `Create compute`
-<br/>
-
-![](./RBAC.png)
+  <br/>
+  ![](./RBAC.png)
+  <br/>
 
 ## 5) Setup Secure Connection(ADB <==> ADLS)
   ### Create a Credential (to be used for an external location)
@@ -78,8 +78,10 @@ This guide walks you through creating a scalable data pipeline in Azure, transfo
   4. Access connector ID: `/subscriptions/ca8b577e-..accessConnectors/unity-catalog-access-connector` (**FOUND BELOW**)
      - Azure portal → `rg-earthquake`(resource group) → `earthquake-db` (db resource) → Managed Resource Group: `databricks-rg-earthquake-<unique>` → `unity-catalog-access-connector`
      - COPY Resource ID : `/subscriptions/ca8b577e-..accessConnectors/unity-catalog-access-connector`
+  <br/>
   ![](./Credential.png)
-
+  <br/>
+  
   ### Create External Locations
   1. `Catalog` → `External Data` → `Create external location`
   2. Create 3 External Locations for all Medallion Stages
@@ -95,24 +97,27 @@ This guide walks you through creating a scalable data pipeline in Azure, transfo
         1. External location name: `gold`
         2. External location name: `abfss://gold@storeearthquake.dfs.core.windows.net/` (**endpoint to ADLS container**)
         3. Storage Credential: `earthqual-cred` (from 5.3)
-     ![](./ExternalLocations.png) 
+  <br/>
+  ![](./ExternalLocations.png)
+  <br/>
 
+## 6)
   
-  
 <br/>
 
-
-<br/>
-
+## 7)
 
 <br/>
 
-
+## 8)
 <br/>
 
-
+## 9)
 <br/>
 
+## 10)
+<br/>
+<br/>
 
 
 
