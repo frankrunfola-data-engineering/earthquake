@@ -70,6 +70,7 @@ This guide walks you through creating a scalable data pipeline in Azure, transfo
   
   ![](./RBAC.png)
   <br/>
+  <br/>
 
 ## 5) Setup Secure Connection(ADB <==> ADLS)
   ### Create a Credential (to be used for an external location)
@@ -82,6 +83,7 @@ This guide walks you through creating a scalable data pipeline in Azure, transfo
   <br/>
   
   ![](./Credential.png)
+  <br/>
   <br/>
   
   ### Create External Locations
@@ -102,6 +104,7 @@ This guide walks you through creating a scalable data pipeline in Azure, transfo
   <br/>
   
   ![](./ExternalLocations.png)
+  <br/>
   <br/>
 
 ## 6)
