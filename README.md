@@ -14,7 +14,6 @@ This guide walks you through creating a scalable data pipeline in Azure, transfo
  - Azure Databricks
  - Azure Data Factory
  - Azure Synapse Analytics
-   
 ---
 <br/>
 
@@ -67,12 +66,16 @@ This guide walks you through creating a scalable data pipeline in Azure, transfo
      - [X] Terminate after 20 minutes
    5. Click `Create compute`
   <br/>
-  
+  ![](./Compute.png)
+  <br/>
+  <br/>
+
+## 5) Security Architecture
   ![](./RBAC.png)
   <br/>
   <br/>
 
-## 5) Setup Secure Connection(ADB <==> ADLS)
+## 6) Setup Secure Connection(ADB <-----> ADLS)
   ### Create a Credential (to be used for an external location)
   1. `Catalog` → `External Data` → `Credential` → `Create credential`
   2. Credential type: `Azure Managed Identity`
@@ -107,9 +110,6 @@ This guide walks you through creating a scalable data pipeline in Azure, transfo
   <br/>
   <br/>
 
-## 6)
-  
-<br/>
 
 ## 7)
 
