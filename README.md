@@ -79,6 +79,7 @@ This guide walks you through creating a scalable data pipeline in Azure, transfo
      - Azure portal → `rg-earthquake`(resource group) → `earthquake-db` (db resource) → Managed Resource Group: `databricks-rg-earthquake-<unique>` → `unity-catalog-access-connector`
      - COPY Resource ID : `/subscriptions/ca8b577e-..accessConnectors/unity-catalog-access-connector`
   <br/>
+  
   ![](./Credential.png)
   <br/>
   
@@ -98,6 +99,7 @@ This guide walks you through creating a scalable data pipeline in Azure, transfo
         2. External location name: `abfss://gold@storeearthquake.dfs.core.windows.net/` (**endpoint to ADLS container**)
         3. Storage Credential: `earthqual-cred` (from 5.3)
   <br/>
+  
   ![](./ExternalLocations.png)
   <br/>
 
@@ -121,6 +123,6 @@ This guide walks you through creating a scalable data pipeline in Azure, transfo
 
 
 
-![Data Engineering vs Software Engineering (6)](https://github.com/user-attachments/assets/bdadd2e0-89be-4683-b53b-fe331be6f6bf)
+![](https://github.com/user-attachments/assets/bdadd2e0-89be-4683-b53b-fe331be6f6bf)
 
 
