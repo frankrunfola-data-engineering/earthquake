@@ -93,7 +93,7 @@ This guide walks you through creating a scalable data pipeline in Azure, transfo
         2. External location name: `abfss://gold@storeearthquake.dfs.core.windows.net/` (**endpoint to ADLS container**)
         3. Storage Credential: `earthqual-cred` (from 5.3)
       
-  ![](./Drawio.png)
+  ![](./RBAC.png)
 <br/>
 
 
