@@ -65,10 +65,10 @@ This guide walks you through creating a scalable data pipeline in Azure, transfo
      - Node type: `General purpose` lowest (ie 14 GB Memory, 4 Cores)
      - [X] Terminate after 20 minutes
    5. Click `Create compute`
-  <br/>
-  ![](./Compute.png)
-  <br/>
-  <br/>
+<br/>
+![](./Compute.png)
+<br/>
+<br/>
 
 ## 5) Security Architecture
   ![](./RBAC.png)
