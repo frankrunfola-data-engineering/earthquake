@@ -496,9 +496,3 @@ df_with_location_sig_class.write.mode('append').parquet(gold_output_path)
   
   ![](./sec-db-to-df.png)
 
-
-
-
-![](https://github.com/user-attachments/assets/bdadd2e0-89be-4683-b53b-fe331be6f6bf)
-
-
