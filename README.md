@@ -3,6 +3,7 @@
 ## Introduction
 
 This guide walks you through creating a scalable data pipeline in Azure, transforming raw data into meaningful insights using Databricks, Azure Data Factory (ADF), and Synapse Analytics.
+
 <br/>
 
 ![](./images/flow.png)
@@ -120,9 +121,8 @@ We implement a **medallion architecture** to structure and organize data effecti
 <br/>
 
 ## 6) Security Architecture
-  ![](./images/sec-db-to-sa-and-df.png)  
+![](./images/sec-db-to-sa-and-df.png)  
 
-<br/>
 
 ## 7) Setup Secure Connection for Databricks (DB <----- ADLS)
   ### Create a Credential (to be used for an external location)
@@ -152,9 +152,10 @@ We implement a **medallion architecture** to structure and organize data effecti
         1. External location name: `gold`
         2. External location name: `abfss://gold@storeearthquake.dfs.core.windows.net/` (**endpoint to ADLS container**)
         3. Storage Credential: `earthqual-cred` (from 5.3)
+  
   <br/>
   
-  ![](./images/db-external-locs.png)
+   ![](./images/db-external-locs.png)
 
 <br/>
 
@@ -484,47 +485,55 @@ df_with_location_sig_class.write.mode('append').parquet(gold_output_path)
  2. New parquee file created **part-00000-tid-8139..**
 <br/>
 
-![](./images/parquee-files-in-gold.png)
+    ![](./images/parquee-files-in-gold.png)
 
 <br/>
 
 ## 11) Datafactory Deployment
-  1. Launch the ADF studio and create a pipeline:
-     - `Author` → `Pipelines` → `Databricks`
-     - Drag **Notebook** activity into the pipeline
-     - Under tab **Azure Databricks**, Add a **Databricks Linked Service**:
-       - Under **Edit linked service**
-       - **Connect via integration runtime**: AutoResolveIntegrationRuntime
-       - **Databricks workspace**: (Choose existing workspace)
-       - **Select cluster**: Existing interactive cluster
-       - **Existing cluster ID**: 1203-151008-8fg1r3qa  (OR WHATEVER IT IS)
-       - **Authenticate type**: 
-          - OPTION 1 - Access Token
-          - Navigate to Databrick → profile icon → Settings → User → Developer → Access tokens → Manage
-          - Generate new token
-          ![](./images/db-access-token.png)
-          
-          - **Access token**:
-       
-          - OPTION 2 - Key Vault Token (**Recommended For security** )
-          - Azure portal → `Key vaults`
-          - Click `Create Key vault`
-          - Choose subscription, rosource group, region, click `review and create`
-          - Under new Key Vault resource, Objects → Keys
-          - Navigate back to  Datafactory resource
-          - Back Under **Edit linked service**
-          - **AKV linked service**: 
-          - ..... TODO...
-  2. Pass parameters to the pipeline:
-     - For example, add parameters `start_date` and `end_date` with dynamic values using `@formatDateTime` expressions.
+   1. Launch the ADF studio and create a pipeline:
+      - `Author` → `Pipelines` → `Databricks`
+      - Add 3 **Notebook** activitys into the pipeline
+      - Under tab **Azure Databricks**, Add a **Databricks Linked Service**
+      - Under **Edit linked service**
+         - **Connect via integration runtime**: AutoResolveIntegrationRuntime
+         - **Databricks workspace**: (Choose existing workspace)
+         - **Select cluster**: Existing interactive cluster
+         - **Existing cluster ID**: 1203-151008-8fg1r3qa  (OR WHATEVER IT IS)
+         - **Authenticate type**: Access Token
+         - Navigate to Databrick → profile icon → Settings → User → Developer → Access tokens → Manage
+         - Generate new token
+        ![](./images/db-access-token.png)
+         - **Access token**:<TOKEN>
+
+  2. Configure 3 Notebooks:
+     - Add Databricks linked service (created above)
+     1. Bronze:
+        - **Notebook path**: /Users/frank@frunfola1229gmail.onmicrosoft.com/bronze
+        - Base parameters:
+          - **start_date**: @formatDateTime(addDays(utcnow(),-1),'yyyy-MM-dd')
+          - **end_date**: @formatDateTime(utcnow(),'yyyy-MM-dd')
+     2. Silver
+        - **Notebook path**: /Users/frank@frunfola1229gmail.onmicrosoft.com/silver
+        - Base parameters:
+          - **bronze_params**: @string(activity('Bronze Notebook').output.runOutput)
+     3. Gold:
+        - **Notebook path**: /Users/frank@frunfola1229gmail.onmicrosoft.com/gold
+        - Base parameters:
+          - **bronze_params**: @string(activity('Bronze Notebook').output.runOutput)
+          - **silver_params**: @string(activity('Silver Notebook').output.runOutput)
+
   3. Chain notebooks (`bronze`, `silver`, `gold`) to create a pipeline with success dependencies.
   4. Validate, publish, and run the pipeline.
   5. Schedule the pipeline to run at desired intervals (e.g., daily).
-
-![](./images/sec-db-to-df.png)
+  <br/>
+![](./images/df-bronze-deploy.png)
+![](./images/df-silver-deploy.png)
+![](./images/df-gold-deploy.png)
 
 ## 11) Data Factory Architecture
+<br/>
 
 ![](./images/sec-db-to-df.png)
+
 
 <br/>
