@@ -1,6 +1,6 @@
 # Data Engineering Tutorial: From Raw Data to Azure Synapse Analytics
 
-# Introduction
+## Introduction
 
 This guide walks you through creating a scalable data pipeline in Azure, transforming raw data into meaningful insights using Databricks, Azure Data Factory (ADF), and Synapse Analytics.
 
@@ -10,29 +10,63 @@ This guide walks you through creating a scalable data pipeline in Azure, transfo
   3. Automate data pipelines with Azure Data Factory.
   4. Query and optimize data in Synapse Analytics for analytics and visualization.
 
-## **Technologies Used**
- - Azure Databricks
- - Azure Data Factory
- - Azure Synapse Analytics
+## Overview and Architecture
+
+### Business Case
+
+Earthquake data is incredibly valuable for understanding seismic events and mitigating risks. Government agencies, research institutions, and insurance companies rely on up-to-date information to plan emergency responses and assess risks. With this automated pipeline, we ensure these stakeholders get the latest data in a way that’s easy to understand and ready to use, saving time and improving decision-making.
+
+### Architecture Overview
+
+This pipeline follows a modular architecture, integrating Azure’s powerful data engineering tools to ensure scalability, reliability, and efficiency. The architecture includes:
+
+1. **Data Ingestion**: Azure Data Factory orchestrates the daily ingestion of earthquake data from the USGS Earthquake API.
+2. **Data Processing**: Databricks processes raw data into structured formats (bronze, silver, gold tiers).
+3. **Data Storage**: Azure Data Lake Storage serves as the backbone for storing and managing data at different stages.
+4. **Data Analysis**: Synapse Analytics enables querying and aggregating data for reporting.
+5. **Optional Visualization**: Power BI can be used to create interactive dashboards for stakeholders.
+
+### Data Modeling
+
+We implement a **medallion architecture** to structure and organize data effectively:
+
+1. **Bronze Layer**: Raw data ingested directly from the API, stored in Parquet format for future reprocessing if needed.
+2. **Silver Layer**: Cleaned and normalized data, removing duplicates and handling missing values, ensuring it’s ready for analytics.
+3. **Gold Layer**: Aggregated and enriched data tailored to specific business needs, such as adding in country codes.
+
+### Understanding the API
+
+- The earthquake API provides detailed seismic event data for a specified start and end date.
+- **Start Date**: Defines the range of data. This is dynamically set via Azure Data Factory for daily ingestion.
+- **API URL**: `https://earthquake.usgs.gov/fdsnws/event/1/`
+
+### Key Benefits
+
+- **Automation**: Eliminates manual data fetching and processing, reducing operational overhead.
+- **Scalability**: Handles large volumes of data seamlessly using Azure services.
+- **Actionable Insights**: Provides stakeholders with ready-to-use data for informed decision-making.
+
 ---
 <br/>
 
 # Steps
 
 ## 1) Create Resource - Databricks
-  - Resource Group: `rg-earthquake` (Create New)
-  - Workspace name: `earthquake-db`
-  - Region: `East US`
-  - Click `Create`
+  1. Create a new Azure Data Factory instance
+    - Resource Group: `rg-earthquake` (Create New)
+    - Workspace name: `earthquake-db`
+    - Region: `East US`
+  2. Click `Create`
 <br/>
 
 ## 2) Create Resource - Storage Account (ADLS Gen2)
-  - Resource Group: `rg-earthquake`
-  - Storage account name: `storeearthquake`
-  - Region: `East US`
-  - Primary service: `Azure Blob Storage or Azure Data Lake Storage Gen 2`
-  - Redundancy: `Locally-redundant strage (LRS)` (Cheapest)
-  - Click `Create`
+   1. Create a new Storage Account instance
+    - Resource Group: `rg-earthquake`
+    - Storage account name: `storeearthquake`
+    - Region: `East US`
+    - Primary service: `Azure Blob Storage or Azure Data Lake Storage Gen 2`
+    - Redundancy: `Locally-redundant strage (LRS)` (Cheapest)
+  2. Click `Create`
 
   ### Create Storage Account Containers
    - **Data Storage** → **Containers**
@@ -47,8 +81,17 @@ This guide walks you through creating a scalable data pipeline in Azure, transfo
     - Account name: `storeearthquake`
     - File system name: `synapse-fs` (New)
     - [X] Assign myself the Storage Bloc Data Contributor on ADLS Gen2
-  - Click `Create`
+  2. Click `Create`
 <br/>
+
+## 4) Create Resource - Azure Data Factory (ADF)
+  1. Create a new Azure Data Factory instance
+    - Resource Group: `rg-earthquake`
+    - Workspace name: `df-earthquake`
+    - Region: `East US`
+  2. Click `Create`
+
+---
 
 ## 4) Databricks Deployment
   - Launch Databricks workspace `earthquake-db`
@@ -70,6 +113,7 @@ This guide walks you through creating a scalable data pipeline in Azure, transfo
 ![](./Compute.png)
 <br/>
 <br/>
+
 
 ## 5) Security Architecture
   ![](./sec-db-to-sa-and-df.png)  
@@ -441,6 +485,19 @@ df_with_location_sig_class.write.mode('append').parquet(gold_output_path)
 ![](./parquee-files-in-gold.png)
 <br/>
 <br/>
+
+## 11) Datafactory Deployment
+  1. Launch the ADF studio and create a pipeline:
+     - Drag the **Notebook** activity into the pipeline and configure it to run Databricks notebooks.
+     - Add a **Databricks Linked Service**:
+       - Use the **AutoResolveIntegrationRuntime**.
+       - Authenticate with an Access Token (recommended to store the token in a Key Vault for security).
+  2. Pass parameters to the pipeline:
+     - For example, add parameters `start_date` and `end_date` with dynamic values using `@formatDateTime` expressions.
+  3. Chain notebooks (`bronze`, `silver`, `gold`) to create a pipeline with success dependencies.
+  4. Validate, publish, and run the pipeline.
+  5. Schedule the pipeline to run at desired intervals (e.g., daily).
+
 
 ## 10) Data Factory Architecture 
   <br/> 
