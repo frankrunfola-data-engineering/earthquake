@@ -121,6 +121,7 @@ This guide walks you through creating a scalable data pipeline in Azure, transfo
      - Select: **unity-catalog-access-connector**
   5. `Select` → `Review and Assign`
 <br/>
+
 ![](./sec-sa.png)
 <br/>
 <br/>
