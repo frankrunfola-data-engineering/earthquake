@@ -49,9 +49,8 @@ We implement a **medallion architecture** to structure and organize data effecti
 - **Scalability**: Handles large volumes of data seamlessly using Azure services.
 - **Actionable Insights**: Provides stakeholders with ready-to-use data for informed decision-making.
 
----
 
-## Steps
+# Steps
 
 ## 1) Create Resource - Databricks
   1. Create a new Azure Data Factory instance
