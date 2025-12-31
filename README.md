@@ -92,10 +92,9 @@ We implement a **medallion architecture** to structure and organize data effecti
     - Workspace name: `df-earthquake`
     - Region: `East US`
   2. Click `Create`
+<br/>
 
----
-
-## 4) Databricks Deployment
+## 5) Databricks Deployment
   - Launch Databricks workspace `earthquake-db`
   - What each Tab does:
     - `Workspace`: Store/Create Notebooks
@@ -117,12 +116,12 @@ We implement a **medallion architecture** to structure and organize data effecti
 <br/>
 
 
-## 5) Security Architecture
+## 6) Security Architecture
   ![](./sec-db-to-sa-and-df.png)  
   <br/>
   <br/>
 
-## 6) Setup Secure Connection for Databricks (DB <----- ADLS)
+## 7) Setup Secure Connection for Databricks (DB <----- ADLS)
   ### Create a Credential (to be used for an external location)
   1. `Catalog` → `External Data` → `Credential` → `Create credential`
   2. Credential type: `Azure Managed Identity`
@@ -158,7 +157,7 @@ We implement a **medallion architecture** to structure and organize data effecti
   <br/>
 
 
-## 7) Setup Secure Connection for ADLS (DB -----> ADLS)
+## 8) Setup Secure Connection for ADLS (DB -----> ADLS)
   1. Azure portal → `storage accont` → `Access Control (IAM)` → `Role assignments` → `Add` 
   2. `Role` → Job function role: **Storage Blob Data Contributor**
   3. `Members` → Assigned access to: **Managed identity**
@@ -172,7 +171,7 @@ We implement a **medallion architecture** to structure and organize data effecti
 <br/>
 <br/>
 
-## 8) Set Up Databricks
+## 9) Set Up Databricks
 1. Azure portal → Launch Databricks workspace `earthquake-db`
 2.  Install python library to cluster
    - `Compute`  → click cluster  → `Libraries`  → `Install new` 
@@ -479,7 +478,7 @@ df_with_location_sig_class.write.mode('append').parquet(gold_output_path)
 <br/>
 <br/>
 
-## 9) Run and Verify new files in Data Storage Container
+## 10) Run and Verify new files in Data Storage Container
  1. Azure portal → `storage accont` → `Data storage` → `Containers` → `gold` → `earthquake_events_gold`
  2. New parquee file created **part-00000-tid-8139..**
 <br/>
