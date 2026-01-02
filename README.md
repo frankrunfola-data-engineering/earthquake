@@ -3,7 +3,6 @@
 ## Introduction
 
 This guide walks you through creating a scalable data pipeline in Azure, transforming raw data into meaningful insights using Databricks, Azure Data Factory (ADF), and Synapse Analytics.
-
 <br/>
 
 ![](./images/flow.png)
@@ -56,20 +55,20 @@ We implement a **medallion architecture** to structure and organize data effecti
 
 ## 1) Create Resource - Databricks
   1. Create a new Azure Data Factory instance
-    - Resource Group: `rg-earthquake` (Create New)
-    - Workspace name: `earthquake-db`
-    - Region: `East US`
+     - Resource Group: `rg-earthquake` (Create New)
+     - Workspace name: `earthquake-db`
+     - Region: `East US`
   2. Click `Create`
 
 <br/>
 
 ## 2) Create Resource - Storage Account (ADLS Gen2)
-   1. Create a new Storage Account instance
-    - Resource Group: `rg-earthquake`
-    - Storage account name: `storeearthquake`
-    - Region: `East US`
-    - Primary service: `Azure Blob Storage or Azure Data Lake Storage Gen 2`
-    - Redundancy: `Locally-redundant strage (LRS)` (Cheapest)
+  1. Create a new Storage Account instance
+      - Resource Group: `rg-earthquake`
+      - Storage account name: `storeearthquake`
+      - Region: `East US`
+      - Primary service: `Azure Blob Storage or Azure Data Lake Storage Gen 2`
+      - Redundancy: `Locally-redundant strage (LRS)` (Cheapest)
   2. Click `Create`
 
   ### Create Storage Account Containers
@@ -82,19 +81,19 @@ We implement a **medallion architecture** to structure and organize data effecti
   - Resource Group: `rg-earthquake`
   - Workspace name: `earthquake-synapse`
   - Region: `East US`
-  - Select Data Lake Storage Gen 2:
+  - Select `Data Lake Storage Gen 2`
     - Account name: `storeearthquake`
     - File system name: `synapse-fs` (New)
-    - [X] Assign myself the Storage Bloc Data Contributor on ADLS Gen2
+    - [X] Assign myself `Storage Bloc Data Contributor on ADLS Gen2`
   2. Click `Create`
 
 <br/>
 
 ## 4) Create Resource - Azure Data Factory (ADF)
-  1. Create a new Azure Data Factory instance
-    - Resource Group: `rg-earthquake`
-    - Workspace name: `df-earthquake`
-    - Region: `East US`
+  1. Create a new **Azure Data Factory instance**
+     - Resource Group: `rg-earthquake`
+     - Workspace name: `df-earthquake`
+     - Region: `East US`
   2. Click `Create`
 
 <br/>
@@ -110,13 +109,13 @@ We implement a **medallion architecture** to structure and organize data effecti
    2. Policy: `Unrestricted` - `Single Node`
    3. Access mode: `Single user`
    4. Performance
-     - [ ] Use Photon Acceleration (Not needed)
-     - Node type: `General purpose` lowest (ie 14 GB Memory, 4 Cores)
-     - [X] Terminate after 20 minutes
+      - [ ] Use Photon Acceleration (Not needed)
+      - Node type: `General purpose` lowest (ie 14 GB Memory, 4 Cores)
+      - [X] Terminate after 20 minutes
    5. Click `Create compute`
 <br/>
 
-![](./images/db-compute.png)
+      ![](./images/db-compute.png)
 
 <br/>
 
@@ -152,10 +151,9 @@ We implement a **medallion architecture** to structure and organize data effecti
         1. External location name: `gold`
         2. External location name: `abfss://gold@storeearthquake.dfs.core.windows.net/` (**endpoint to ADLS container**)
         3. Storage Credential: `earthqual-cred` (from 5.3)
-  
   <br/>
-  
-   ![](./images/db-external-locs.png)
+
+        ![](./images/db-external-locs.png)
 
 <br/>
 
@@ -169,20 +167,20 @@ We implement a **medallion architecture** to structure and organize data effecti
   5. `Select` → `Review and Assign`
 <br/>
 
-![](./images/sec-sa.png)
+     ![](./images/sec-sa.png)
 
 <br/>
 
 ## 9) Set Up Databricks
 1. Azure portal → Launch Databricks workspace `earthquake-db`
-2.  Install python library to cluster
+2. Install python library to cluster
    - `Compute`  → click cluster  → `Libraries`  → `Install new` 
    - Library Source: `PyPi`
    - Package: `reverse_geocoder`
 4. `Workspace` → `Create`
-  - **bronze**: Raw data ingestion
-  - **silver**: Data cleaning and transformation
-  - **gold**: Aggregated and ready-to-query data
+   - **bronze**: Raw data ingestion
+   - **silver**: Data cleaning and transformation
+   - **gold**: Aggregated and ready-to-query data
 
   ```python
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -475,10 +473,7 @@ gold_output_path = f"{gold_adls}earthquake_events_gold/"
 #---------------------------------------------------------------------
 # Append DataFrame to Silver container in Parquet format
 df_with_location_sig_class.write.mode('append').parquet(gold_output_path)
-
 ```
-<br/>
-<br/>
 
 ## 10) Run and Verify new files in Data Storage Container
  1. Azure portal → `storage accont` → `Data storage` → `Containers` → `gold` → `earthquake_events_gold`
@@ -492,43 +487,49 @@ df_with_location_sig_class.write.mode('append').parquet(gold_output_path)
 ## 11) Datafactory Deployment
    1. Launch the ADF studio and create a pipeline:
       - `Author` → `Pipelines` → `Databricks`
-      - Add 3 **Notebook** activitys into the pipeline
-      - Under tab **Azure Databricks**, Add a **Databricks Linked Service**
+      - Add 3 **Notebook** activitys (Bronze, Silver, Gold)into the pipeline
+      
+   2. Add Linked Service to Bronze notebook
+    - `Azure Databricks` → `Databricks Linked Service` → `New`
       - Under **Edit linked service**
-         - **Connect via integration runtime**: AutoResolveIntegrationRuntime
-         - **Databricks workspace**: (Choose existing workspace)
-         - **Select cluster**: Existing interactive cluster
-         - **Existing cluster ID**: 1203-151008-8fg1r3qa  (OR WHATEVER IT IS)
-         - **Authenticate type**: Access Token
-         - Navigate to Databrick → profile icon → Settings → User → Developer → Access tokens → Manage
-         - Generate new token
-        ![](./images/db-access-token.png)
-         - **Access token**:<TOKEN>
+      - **Connect via integration runtime**: AutoResolveIntegrationRuntime
+      - **Databricks workspace**: (Choose existing workspace)
+      - **Select cluster**: Existing interactive cluster
+      - **Existing cluster ID**: 1203-151008-8fg1r3qa  (OR WHATEVER IT IS)
+      - **Authenticate type**: Access Token
+      - Navigate to Databrick → profile icon → Settings → User → Developer → Access tokens → Manage
+      - Generate new token
+    ![](./images/db-access-token.png)
+      - **Access token**: **TOKEN GOES HERE**
+      - ![](./images/df-edit-linked-service.png)
+      - Click `save`
 
-  2. Configure 3 Notebooks:
-     - Add Databricks linked service (created above)
-     1. Bronze:
+   3. Configure 3 Notebooks:
+    - Add Databricks linked service (created above)
+      1. Bronze:
         - **Notebook path**: /Users/frank@frunfola1229gmail.onmicrosoft.com/bronze
-        - Base parameters:
-          - **start_date**: @formatDateTime(addDays(utcnow(),-1),'yyyy-MM-dd')
-          - **end_date**: @formatDateTime(utcnow(),'yyyy-MM-dd')
-     2. Silver
-        - **Notebook path**: /Users/frank@frunfola1229gmail.onmicrosoft.com/silver
-        - Base parameters:
-          - **bronze_params**: @string(activity('Bronze Notebook').output.runOutput)
-     3. Gold:
-        - **Notebook path**: /Users/frank@frunfola1229gmail.onmicrosoft.com/gold
-        - Base parameters:
-          - **bronze_params**: @string(activity('Bronze Notebook').output.runOutput)
-          - **silver_params**: @string(activity('Silver Notebook').output.runOutput)
+          - Base parameters:
+            - **start_date**: @formatDateTime(addDays(utcnow(),-1),'yyyy-MM-dd')
+            - **end_date**: @formatDateTime(utcnow(),'yyyy-MM-dd')
+      2. Silver
+         - **Notebook path**: /Users/frank@frunfola1229gmail.onmicrosoft.com/silver
+          - Base parameters:
+            - **bronze_params**: @string(activity('Bronze Notebook').output.runOutput)
+      3. Gold:
+         - **Notebook path**: /Users/frank@frunfola1229gmail.onmicrosoft.com/gold
+          - Base parameters:
+            - **bronze_params**: @string(activity('Bronze Notebook').output.runOutput)
+            - **silver_params**: @string(activity('Silver Notebook').output.runOutput)
 
-  3. Chain notebooks (`bronze`, `silver`, `gold`) to create a pipeline with success dependencies.
-  4. Validate, publish, and run the pipeline.
-  5. Schedule the pipeline to run at desired intervals (e.g., daily).
+  4. Chain notebooks to create a pipeline 
+      -  `bronze`, `silver`, `gold` with success dependencies.
+  5. Validate, publish, and run the pipeline.
+  6. Schedule the pipeline to run at desired intervals (e.g., daily).
   <br/>
-![](./images/df-bronze-deploy.png)
-![](./images/df-silver-deploy.png)
-![](./images/df-gold-deploy.png)
+  
+     ![](./images/df-bronze-deploy.png)
+     ![](./images/df-silver-deploy.png)
+     ![](./images/df-gold-deploy.png)
 
 ## 11) Data Factory Architecture
 <br/>
