@@ -115,12 +115,12 @@ We implement a **medallion architecture** to structure and organize data effecti
    5. Click `Create compute`
 <br/>
 
-  ![](./images/db-compute.png)
+   ![](./images/db-compute.png)
 
 <br/>
 
 ## 6) Security Architecture
-![](./images/sec-db-to-sa-and-df.png)  
+ ![](./images/sec-db-to-sa-and-df.png)  
 
 
 ## 7) Setup Secure Connection for Databricks (DB <----- ADLS)
