@@ -521,11 +521,11 @@ df_with_location_sig_class.write.mode('append').parquet(gold_output_path)
         - Base parameters:
           - **bronze_params**: @string(activity('Bronze Notebook').output.runOutput)
           - **silver_params**: @string(activity('Silver Notebook').output.runOutput)
-
   3. Chain notebooks (`bronze`, `silver`, `gold`) to create a pipeline with success dependencies.
   4. Validate, publish, and run the pipeline.
   5. Schedule the pipeline to run at desired intervals (e.g., daily).
   <br/>
+  
 ![](./images/df-bronze-deploy.png)
 ![](./images/df-silver-deploy.png)
 ![](./images/df-gold-deploy.png)
