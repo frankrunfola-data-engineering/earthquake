@@ -1,0 +1,57 @@
+# =========================
+# Python / Virtual Envs
+# =========================
+.venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+dist/
+build/
+
+# =========================
+# Jupyter
+# =========================
+.ipynb_checkpoints/
+*.nbconvert.ipynb
+
+# =========================
+# OS / Editor junk
+# =========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Data outputs (generated)
+# Keep only the raw input CSV in bronze.
+# =========================
+data/bronze/*.parquet
+data/bronze/*.csv
+!data/bronze/movies_raw.csv
+
+data/silver/*.parquet
+data/gold/*.parquet
+data/quarantine/*.parquet
+
+# If you ever add other raw inputs you want tracked, whitelist them like:
+# !data/bronze/another_raw_input.csv
+
+# =========================
+# Optional: local temp artifacts
+# =========================
+*.tmp
+*.bak

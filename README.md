@@ -1,26 +1,24 @@
 # **Data Engineering Tutorial: From Raw Data to Azure Synapse Analytics**
 
 ## Introduction
-
 This guide walks you through creating a scalable data pipeline in Azure, transforming raw data into meaningful insights using Databricks, Azure Data Factory (ADF), and Synapse Analytics.
 <br/>
 
  ![](./images/flow.png)
+<br/>
 
 ## **What You’ll Learn**
   1. Configure Azure Databricks and securely access data in Azure Storage.
   2. Process and transform data using Databricks notebooks (`bronze`, `silver`, `gold`).
   3. Automate data pipelines with Azure Data Factory.
   4. Query and optimize data in Synapse Analytics for analytics and visualization.
+<br/>
 
-## Overview and Architecture
-
-### Business Case
-
+## Business Case
 Earthquake data is incredibly valuable for understanding seismic events and mitigating risks. Government agencies, research institutions, and insurance companies rely on up-to-date information to plan emergency responses and assess risks. With this automated pipeline, we ensure these stakeholders get the latest data in a way that’s easy to understand and ready to use, saving time and improving decision-making.
+<br/>
 
-### Architecture Overview
-
+## Architecture Overview
 This pipeline follows a modular architecture, integrating Azure’s powerful data engineering tools to ensure scalability, reliability, and efficiency. The architecture includes:
 
 1. **Data Ingestion**: Azure Data Factory orchestrates the daily ingestion of earthquake data from the USGS Earthquake API.
@@ -28,41 +26,138 @@ This pipeline follows a modular architecture, integrating Azure’s powerful dat
 3. **Data Storage**: Azure Data Lake Storage serves as the backbone for storing and managing data at different stages.
 4. **Data Analysis**: Synapse Analytics enables querying and aggregating data for reporting.
 5. **Optional Visualization**: Power BI can be used to create interactive dashboards for stakeholders.
+<br/>
 
-### Data Modeling
-
+## Data Modeling
 We implement a **medallion architecture** to structure and organize data effectively:
 
 1. **Bronze Layer**: Raw data ingested directly from the API, stored in Parquet format for future reprocessing if needed.
 2. **Silver Layer**: Cleaned and normalized data, removing duplicates and handling missing values, ensuring it’s ready for analytics.
 3. **Gold Layer**: Aggregated and enriched data tailored to specific business needs, such as adding in country codes.
+<br/>
 
-### Understanding the API
+## Folder Structure(clean + modular)
+```
+earthquake/
+|-- README.md                  # Project overview + how to run
+|-- pyproject.toml             # Dependencies + packaging (or use requirements.txt)
+|-- requirements.txt           # Optional alternative to pyproject.toml
+|-- .gitignore                 # Ignore venv, data outputs, caches, secrets
+|
+|-- configs/                   # Environment configs (NO secrets)
+|   |-- dev.yaml               # Local/dev settings (paths, lookback days, bins)
+|   `-- prod.yaml              # Prod-like settings (still no secrets)
+|
+|-- src/                       # All reusable Python code (importable package)
+|   `-- earthquake_pipeline/
+|       |-- __init__.py
+|       |-- config.py          # Load/validate config into objects
+|       |-- logging.py         # Central logging setup
+|       |
+|       |-- extract/           # Pull data from external sources
+|       |   |-- __init__.py
+|       |   `-- usgs_client.py # Calls USGS API, returns raw features
+|       |
+|       |-- transform/         # Clean + reshape (Bronze -> Silver)
+|       |   |-- __init__.py
+|       |   |-- normalize.py   # GeoJSON -> DataFrame, unpack coords
+|       |   `-- clean.py       # Types, null handling, validation rules
+|       |
+|       |-- enrich/            # Enrichment (Silver -> Gold)
+|       |   |-- __init__.py
+|       |   |-- country.py     # Country code enrichment (offline preferred)
+|       |   `-- classify.py    # sig_class binning logic
+|       |
+|       |-- load/              # Output writers (local today, ADLS later)
+|       |   |-- __init__.py
+|       |   `-- local_fs.py    # write_json/write_csv and mkdirs
+|       |
+|       `-- pipeline/          # Orchestration (calls modules in order)
+|           |-- __init__.py
+|           `-- run.py         # run_pipeline(config): Bronze->Silver->Gold
+|
+|-- scripts/                   # Entry points (thin wrappers, not reusable code)
+|   `-- run_all.py             # CLI runner: loads config, calls pipeline
+|
+|-- data/                      # Local outputs (should be gitignored)
+|   |-- bronze/                # Raw API JSON dumps
+|   |-- silver/                # Cleaned/tabular dataset
+|   |-- gold/                  # Enriched dataset for analytics
+|   `-- quarantine/            # Bad records / validation failures
+|
+|-- docs/                      # Documentation assets (human-only)
+|   `-- architecture/
+|       `-- diagrams/          # Draw.io/Mermaid/PNG diagrams
+|           |-- pipeline.drawio
+|           `-- pipeline.png
+|
+`-- tests/                     # Unit tests for transform/enrich logic
+    `-- test_transforms.py
+```
+<br/>
 
+## Understanding the API
 - The earthquake API provides detailed seismic event data for a specified start and end date.
 - **Start Date**: Defines the range of data. This is dynamically set via Azure Data Factory for daily ingestion.
 - **API URL**: `https://earthquake.usgs.gov/fdsnws/event/1/`
+<br/>
 
-### Key Benefits
-
+## Key Benefits
 - **Automation**: Eliminates manual data fetching and processing, reducing operational overhead.
 - **Scalability**: Handles large volumes of data seamlessly using Azure services.
 - **Actionable Insights**: Provides stakeholders with ready-to-use data for informed decision-making.
-
 <br/>
 
-# **Steps**
+## Run Locally
 
-## 1) Create Resource - Databricks
+## 1) Create and activate a venv:
+```bash
+python -m venv .venv
+source .venv/Scripts/activate 
+```
+
+## 2) Confirm it worked
+```bash
+which python
+python --version
+```
+
+## 3) Install requirements
+```bash
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+## 4) Install package from /src (installs /earthquake.egg-info)
+```bash
+python -m pip install -e .
+```
+
+## 5) sanity check
+python -c "import earthquake; print('OK', earthquake.__file__)"
+
+## 6) Run
+```bash
+python ./scripts/run_all.py
+```
+
+## 6) Deactivate when done
+```bash
+deactivate
+```
+
+## Run In Azure 
+
+### 1) Create Resource - Databricks
   1. Create a new Azure Data Factory instance
      - Resource Group: `rg-earthquake` (Create New)
      - Workspace name: `earthquake-db`
      - Region: `East US`
   2. Click `Create`
-
 <br/>
 
-## 2) Create Resource - Storage Account (ADLS Gen2)
+
+### 2) Create Resource - Storage Account (ADLS Gen2)
   1. Create a new Storage Account instance
       - Resource Group: `rg-earthquake`
       - Storage account name: `storeearthquake`
@@ -71,13 +166,13 @@ We implement a **medallion architecture** to structure and organize data effecti
       - Redundancy: `Locally-redundant strage (LRS)` (Cheapest)
   2. Click `Create`
 
-  ### Create Storage Account Containers
+  #### Create Storage Account Containers
    - **Data Storage** → **Containers**
    - Create 3 Containers (Bronze, Silver, Gold)
-
 <br/>
 
-## 3) Create Resource - Synapse workspace
+
+### 3) Create Resource - Synapse workspace
   - Resource Group: `rg-earthquake`
   - Workspace name: `earthquake-synapse`
   - Region: `East US`
@@ -86,25 +181,25 @@ We implement a **medallion architecture** to structure and organize data effecti
     - File system name: `synapse-fs` (New)
     - [X] Assign myself `Storage Bloc Data Contributor on ADLS Gen2`
   2. Click `Create`
-
 <br/>
 
-## 4) Create Resource - Azure Data Factory (ADF)
+
+### 4) Create Resource - Azure Data Factory (ADF)
   1. Create a new **Azure Data Factory instance**
      - Resource Group: `rg-earthquake`
      - Workspace name: `df-earthquake`
      - Region: `East US`
   2. Click `Create`
-
 <br/>
 
-## 5) Databricks Deployment
+
+### 5) Databricks Deployment
   - Launch Databricks workspace `earthquake-db`
   - What each Tab does:
     - `Workspace`: Store/Create Notebooks
     - `Catalog`:   Connect ADLS storage to be maniupulate
     - `Compute`:   Notebooks run here
-   ### Create Compute instance
+   #### Create Compute instance
    1. Click create
    2. Policy: `Unrestricted` - `Single Node`
    3. Access mode: `Single user`
@@ -116,15 +211,15 @@ We implement a **medallion architecture** to structure and organize data effecti
 <br/>
 
    ![](./images/db-compute.png)
-
 <br/>
 
-## 6) Security Architecture
+
+### 6) Security Architecture
  ![](./images/sec-db-to-sa-and-df.png)  
 
 
-## 7) Setup Secure Connection for Databricks (DB <----- ADLS)
-  ### Create a Credential (to be used for an external location)
+### 7) Setup Secure Connection for Databricks (DB <----- ADLS)
+  #### Create a Credential (to be used for an external location)
   1. `Catalog` → `External Data` → `Credential` → `Create credential`
   2. Credential type: `Azure Managed Identity`
   3. Credential name: `earthqual-cred`
@@ -135,9 +230,9 @@ We implement a **medallion architecture** to structure and organize data effecti
 
   ![](./images/db-credentials.png)
   ![](./images/sec-db.png)
+<br/>
 
-
-  ### Create External Locations
+  #### Create External Locations
   1. `Catalog` → `External Data` → `Create external location`
   2. Create 3 External Locations for all Medallion Stages
      1. Bronze
@@ -158,7 +253,7 @@ We implement a **medallion architecture** to structure and organize data effecti
 
 <br/>
 
-## 8) Setup Secure Connection for ADLS (DB -----> ADLS)
+### 8) Setup Secure Connection for ADLS (DB -----> ADLS)
   1. Azure portal → `storage accont` → `Access Control (IAM)` → `Role assignments` → `Add` 
   2. `Role` → Job function role: **Storage Blob Data Contributor**
   3. `Members` → Assigned access to: **Managed identity**
@@ -172,7 +267,7 @@ We implement a **medallion architecture** to structure and organize data effecti
 
 <br/>
 
-## 9) Set Up Databricks
+### 9) Set Up Databricks
 1. Azure portal → Launch Databricks workspace `earthquake-db`
 2. Install python library to cluster
    - `Compute`  → click cluster  → `Libraries`  → `Install new` 
@@ -476,7 +571,7 @@ gold_output_path = f"{gold_adls}earthquake_events_gold/"
 df_with_location_sig_class.write.mode('append').parquet(gold_output_path)
 ```
 
-## 10) Run and Verify new files in Data Storage Container
+### 10) Run and Verify new files in Data Storage Container
  1. Azure portal → `storage accont` → `Data storage` → `Containers` → `gold` → `earthquake_events_gold`
  2. New parquee file created **part-00000-tid-8139..**
 <br/>
@@ -484,7 +579,7 @@ df_with_location_sig_class.write.mode('append').parquet(gold_output_path)
 ![](./images/parquee-files-in-gold.png)
 <br/>
 
-## 11) Datafactory Deployment
+### 11) Datafactory Deployment
    1. Launch the ADF studio and create a pipeline:
       - `Author` → `Pipelines` → `Databricks`
       - Add 3 **Notebook** activitys (Bronze, Silver, Gold)into the pipeline
@@ -531,7 +626,7 @@ df_with_location_sig_class.write.mode('append').parquet(gold_output_path)
  ![](./images/df-silver-deploy.png)
  ![](./images/df-gold-deploy.png)
 
-## 11) Data Factory Architecture
+### 11) Data Factory Architecture
 <br/>
 
 ![](./images/sec-db-to-df.png)

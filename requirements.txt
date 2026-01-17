@@ -1,0 +1,4 @@
+reverse_geocoder
+requests
+pandas
+python-dotenv
