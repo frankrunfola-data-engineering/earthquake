@@ -1,8 +1,37 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "earthquake"
-version = "0.0.1"
-dependencies = []
+version = "0.1.0"
+description = "USGS earthquake medallion pipeline (Bronze/Silver/Gold)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "requests>=2.31",
+  "pandas>=2.0",
+  "python-dotenv>=1.0",
+  "reverse_geocoder>=1.5",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0",
+  "ruff>=0.4",
+]
+
+[project.scripts]
+earthquake = "earthquake.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100

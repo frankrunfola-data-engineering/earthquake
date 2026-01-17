@@ -35,17 +35,30 @@ Thumbs.db
 # =========================
 *.log
 
+# Env vars (commit .env.example instead)
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
 # =========================
 # Data outputs (generated)
-# Keep only the raw input CSV in bronze.
 # =========================
 data/bronze/*.parquet
 data/bronze/*.csv
-!data/bronze/*.earthquake_data.json
-
 data/silver/*.parquet
 data/gold/*.parquet
 data/quarantine/*.parquet
+/data/*
+
+# =========================
+# White List
+# =========================
+!/data/.gitkeep
+!data/bronze/*.json
+!/data/bronze/.gitkeep
+!/data/silver/.gitkeep
+!/data/gold/.gitkeep
 
 # If you ever add other raw inputs you want tracked, whitelist them like:
 # !data/bronze/another_raw_input.csv
@@ -55,3 +68,4 @@ data/quarantine/*.parquet
 # =========================
 *.tmp
 *.bak
+

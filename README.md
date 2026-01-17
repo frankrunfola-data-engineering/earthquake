@@ -1,10 +1,7 @@
-# **Data Engineering Tutorial: From Raw Data to Azure Synapse Analytics**
+# Earthquake Pipeline (USGS) — Medallion Demo
 
 ## Introduction
 This guide walks you through creating a scalable data pipeline in Azure, transforming raw data into meaningful insights using Databricks, Azure Data Factory (ADF), and Synapse Analytics.
-<br/>
-
- ![](./docs/images/flow.png)
 <br/>
 
 ## **What You’ll Learn**
@@ -17,6 +14,7 @@ This guide walks you through creating a scalable data pipeline in Azure, transfo
 ## Business Case
 Earthquake data is incredibly valuable for understanding seismic events and mitigating risks. Government agencies, research institutions, and insurance companies rely on up-to-date information to plan emergency responses and assess risks. With this automated pipeline, we ensure these stakeholders get the latest data in a way that’s easy to understand and ready to use, saving time and improving decision-making.
 <br/>
+
 
 ## Architecture Overview
 This pipeline follows a modular architecture, integrating Azure’s powerful data engineering tools to ensure scalability, reliability, and efficiency. The architecture includes:
@@ -31,68 +29,65 @@ This pipeline follows a modular architecture, integrating Azure’s powerful dat
 ## Data Modeling
 We implement a **medallion architecture** to structure and organize data effectively:
 
-1. **Bronze Layer**: Raw data ingested directly from the API, stored in Parquet format for future reprocessing if needed.
-2. **Silver Layer**: Cleaned and normalized data, removing duplicates and handling missing values, ensuring it’s ready for analytics.
-3. **Gold Layer**: Aggregated and enriched data tailored to specific business needs, such as adding in country codes.
+1. **Extract** Raw data ingested directly from public USGS earthquake data (GeoJSON)
+2. Write to **Bronze Layer**: Stored in JSON format 
+    - Used for future reprocessing if needed.
+3. Transform to **Silver Layer**: Cleaned and normalized data
+    - Removing duplicates and handling missing values, ensuring it’s ready for analytics.
+4. **Gold Layer**: Aggregated and enriched data tailored to specific business needs, such as adding in country codes.
+    - CSV (country code + significance class)
 <br/>
 
-## Folder Structure(clean + modular)
+See: `docs/architecture.md`
+
+## Repo layout
 ```
-earthquake/
-|-- README.md                  # Project overview + how to run
-|-- pyproject.toml             # Dependencies + packaging (or use requirements.txt)
-|-- requirements.txt           # Optional alternative to pyproject.toml
-|-- .gitignore                 # Ignore venv, data outputs, caches, secrets
-|
-|-- configs/                   # Environment configs (NO secrets)
-|   |-- dev.yaml               # Local/dev settings (paths, lookback days, bins)
-|   `-- prod.yaml              # Prod-like settings (still no secrets)
-|
-|-- src/                       # All reusable Python code (importable package)
-|   `-- earthquake_pipeline/
-|       |-- __init__.py
-|       |-- config.py          # Load/validate config into objects
-|       |-- logging.py         # Central logging setup
-|       |
-|       |-- extract/           # Pull data from external sources
-|       |   |-- __init__.py
-|       |   `-- usgs_client.py # Calls USGS API, returns raw features
-|       |
-|       |-- transform/         # Clean + reshape (Bronze -> Silver)
-|       |   |-- __init__.py
-|       |   |-- normalize.py   # GeoJSON -> DataFrame, unpack coords
-|       |   `-- clean.py       # Types, null handling, validation rules
-|       |
-|       |-- enrich/            # Enrichment (Silver -> Gold)
-|       |   |-- __init__.py
-|       |   |-- country.py     # Country code enrichment (offline preferred)
-|       |   `-- classify.py    # sig_class binning logic
-|       |
-|       |-- load/              # Output writers (local today, ADLS later)
-|       |   |-- __init__.py
-|       |   `-- local_fs.py    # write_json/write_csv and mkdirs
-|       |
-|       `-- pipeline/          # Orchestration (calls modules in order)
-|           |-- __init__.py
-|           `-- run.py         # run_pipeline(config): Bronze->Silver->Gold
-|
-|-- scripts/                   # Entry points (thin wrappers, not reusable code)
-|   `-- run_all.py             # CLI runner: loads config, calls pipeline
-|
-|-- data/                      # Local outputs (should be gitignored)
-|   |-- bronze/                # Raw API JSON dumps
-|   |-- silver/                # Cleaned/tabular dataset
-|   |-- gold/                  # Enriched dataset for analytics
-|   `-- quarantine/            # Bad records / validation failures
-|
-|-- docs/                      # Documentation assets (human-only)
-|   `-- architecture/
-|       `-- diagrams/          # Draw.io/Mermaid/PNG diagrams
-|           |-- pipeline.drawio
-|           `-- pipeline.png
-|
-`-- tests/                     # Unit tests for transform/enrich logic
-    `-- test_transforms.py
+earthquake-medallion-pipeline/
+├─ README.md                          # You are here: setup + how to run
+├─ pyproject.toml                     # Packaging + deps (recommended)
+├─ .env.example                       # Example env vars (no secrets)
+├─ .gitignore                         # Ignore venv, data outputs, cache, etc.
+│
+├─ scripts/
+│  └─ main.py                         # Simple “one command” runner (calls earthquake.app.main)
+│
+├─ src/
+│  └─ earthquake/                     # Main Python package (importable)
+│     ├─ __init__.py                  # Marks this folder as a package
+│     ├─ app.py                       # Minimal entrypoint (loads env, builds config, runs pipeline)
+│     ├─ pipeline.py                  # Orchestrates Bronze → Silver → Gold
+│     ├─ config.py                    # Reads env vars and provides PipelineConfig
+│     │
+│     ├─ extract/                     # Getting raw data (Bronze)
+│     │  └─ usgs.py                   # fetch_features() hits USGS API and returns GeoJSON
+│     │
+│     ├─ transform/                   # Cleaning/flattening (Silver)
+│     │  └─ silver.py                 # features_to_silver_df() → normalized dataframe
+│     │
+│     ├─ enrich/                      # Aggregations/analytics (Gold)
+│     │  └─ gold.py                   # silver_to_gold_df() → daily rollups
+│     │
+│     ├─ io/                          # Read/write + path rules
+│     │  ├─ fs.py                     # write_json(), write_csv()
+│     │  └─ paths.py                  # build_paths() + MedallionPaths (bronze/silver/gold dirs)
+│     │
+│     └─ logging_utils.py             # configure_logging() helper (keep it tiny)
+│
+├─ tests/                             # Optional but smart: fast unit tests
+│  ├─ test_paths.py                   # Ensures build_paths() outputs correct directories
+│  ├─ test_silver_transform.py        # Ensures GeoJSON → dataframe shape/columns
+│  └─ test_gold_rollup.py             # Ensures rollups are correct
+│
+└─ data/                              # GENERATED OUTPUT (gitignored)
+   ├─ bronze/
+   │  └─ run_date=YYYY-MM-DD/
+   │     └─ usgs_features.json        # Raw API response snapshot
+   ├─ silver/
+   │  └─ run_date=YYYY-MM-DD/
+   │     └─ earthquakes_silver.csv    # Cleaned/flattened events
+   └─ gold/
+      └─ run_date=YYYY-MM-DD/
+         └─ earthquakes_gold.csv      # Daily metrics (counts, max/avg magnitude, etc.)
 ```
 <br/>
 
@@ -108,528 +103,24 @@ earthquake/
 - **Actionable Insights**: Provides stakeholders with ready-to-use data for informed decision-making.
 <br/>
 
+
 ## Run Locally
-
-## 1) Create and activate a venv:
 ```bash
-python -m venv .venv
-source .venv/Scripts/activate 
+python -m venv .venv                 #Create venv:
+source .venv/Scripts/activate        #Activate venv (PWSH: source .venv/bin/activate)
+python -m pip install --upgrade pip  #Install requirements
+pip install -e .                     #Install project deps into venv
+cp .env.example .env                 #Optional: load env vars (API_BASE_URL, OUTPUT_DIR)
+python -m scripts.run                #Run (defaults to yesterday->today)  --log-level INFO
 ```
 
-## 2) Confirm it worked
-```bash
-which python
-python --version
-```
-
-## 3) Install requirements
-```bash
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-## 4) Install package from /src (installs /earthquake.egg-info)
-```bash
-python -m pip install -e .
-```
-
-## 5) sanity check
-python -c "import earthquake; print('OK', earthquake.__file__)"
-
-## 6) Run
-```bash
-python ./scripts/run_all.py
-```
-
-## 6) Deactivate when done
-```bash
-deactivate
-```
-
-## Run In Azure 
-
-### 1) Create Resource - Databricks
-  1. Create a new Azure Data Factory instance
-     - Resource Group: `rg-earthquake` (Create New)
-     - Workspace name: `earthquake-db`
-     - Region: `East US`
-  2. Click `Create`
-<br/>
-
-
-### 2) Create Resource - Storage Account (ADLS Gen2)
-  1. Create a new Storage Account instance
-      - Resource Group: `rg-earthquake`
-      - Storage account name: `storeearthquake`
-      - Region: `East US`
-      - Primary service: `Azure Blob Storage or Azure Data Lake Storage Gen 2`
-      - Redundancy: `Locally-redundant strage (LRS)` (Cheapest)
-  2. Click `Create`
-
-  #### Create Storage Account Containers
-   - **Data Storage** → **Containers**
-   - Create 3 Containers (Bronze, Silver, Gold)
-<br/>
-
-
-### 3) Create Resource - Synapse workspace
-  - Resource Group: `rg-earthquake`
-  - Workspace name: `earthquake-synapse`
-  - Region: `East US`
-  - Select `Data Lake Storage Gen 2`
-    - Account name: `storeearthquake`
-    - File system name: `synapse-fs` (New)
-    - [X] Assign myself `Storage Bloc Data Contributor on ADLS Gen2`
-  2. Click `Create`
-<br/>
-
-
-### 4) Create Resource - Azure Data Factory (ADF)
-  1. Create a new **Azure Data Factory instance**
-     - Resource Group: `rg-earthquake`
-     - Workspace name: `df-earthquake`
-     - Region: `East US`
-  2. Click `Create`
-<br/>
-
-
-### 5) Databricks Deployment
-  - Launch Databricks workspace `earthquake-db`
-  - What each Tab does:
-    - `Workspace`: Store/Create Notebooks
-    - `Catalog`:   Connect ADLS storage to be maniupulate
-    - `Compute`:   Notebooks run here
-   #### Create Compute instance
-   1. Click create
-   2. Policy: `Unrestricted` - `Single Node`
-   3. Access mode: `Single user`
-   4. Performance
-      - [ ] Use Photon Acceleration (Not needed)
-      - Node type: `General purpose` lowest (ie 14 GB Memory, 4 Cores)
-      - [X] Terminate after 20 minutes
-   5. Click `Create compute`
-<br/>
-
-   ![](./docs/images/db-compute.png)
-<br/>
-
-
-### 6) Security Architecture
- ![](./docs/images/sec-db-to-sa-and-df.png)  
-
-
-### 7) Setup Secure Connection for Databricks (DB <----- ADLS)
-  #### Create a Credential (to be used for an external location)
-  1. `Catalog` → `External Data` → `Credential` → `Create credential`
-  2. Credential type: `Azure Managed Identity`
-  3. Credential name: `earthqual-cred`
-  4. Access connector ID: `/subscriptions/ca8b577e-..accessConnectors/unity-catalog-access-connector` (**FOUND BELOW**)
-     - Azure portal → `rg-earthquake`(resource group) → `earthquake-db` (db resource) → (in middle of screen) Managed Resource Group: `databricks-rg-earthquake-<unique>` → `unity-catalog-access-connector`
-     - COPY Resource ID : `/subscriptions/ca8b577e-..accessConnectors/unity-catalog-access-connector`
-<br/>
-
-  ![](./docs/images/db-credentials.png)
-  ![](./docs/images/sec-db.png)
-<br/>
-
-  #### Create External Locations
-  1. `Catalog` → `External Data` → `Create external location`
-  2. Create 3 External Locations for all Medallion Stages
-     1. Bronze
-        1. External location name: `bronze`
-        2. External location name: `abfss://bronze@storeearthquake.dfs.core.windows.net/` (**endpoint to ADLS container**)
-        3. Storage Credential: `earthqual-cred` (from 5.3)
-     2. Silver
-        1. External location name: `silver`
-        2. External location name: `abfss://silver@storeearthquake.dfs.core.windows.net/` (**endpoint to ADLS container**)
-        3. Storage Credential: `earthqual-cred` (from 5.3)
-     3. Gold
-        1. External location name: `gold`
-        2. External location name: `abfss://gold@storeearthquake.dfs.core.windows.net/` (**endpoint to ADLS container**)
-        3. Storage Credential: `earthqual-cred` (from 5.3)
-  <br/>
-
-  ![](./docs/images/db-external-locs.png)
-
-<br/>
-
-### 8) Setup Secure Connection for ADLS (DB -----> ADLS)
-  1. Azure portal → `storage accont` → `Access Control (IAM)` → `Role assignments` → `Add` 
-  2. `Role` → Job function role: **Storage Blob Data Contributor**
-  3. `Members` → Assigned access to: **Managed identity**
-  4. On the right pane:
-     - Managed identity: **Access Connector for Azure Databricks**
-     - Select: **unity-catalog-access-connector**
-  5. `Select` → `Review and Assign`
-<br/>
-
-  ![](./docs/images/sec-sa.png)
-
-<br/>
-
-### 9) Set Up Databricks
-1. Azure portal → Launch Databricks workspace `earthquake-db`
-2. Install python library to cluster
-   - `Compute`  → click cluster  → `Libraries`  → `Install new` 
-   - Library Source: `PyPi`
-   - Package: `reverse_geocoder`
-4. `Workspace` → `Create`
-   - **bronze**: Raw data ingestion
-   - **silver**: Data cleaning and transformation
-   - **gold**: Aggregated and ready-to-query data
-
-  ```python
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#                          bronze
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Mount ADLS Gen2
-# Required each time the cluster is restarted which should be only on the first notebook as they run in order
-tiers = ["bronze", "silver", "gold"]
-adls_paths = {tier: f"abfss://{tier}@storeearthquake.dfs.core.windows.net/" for tier in tiers}
-
-# Accessing paths
-bronze_adls = adls_paths["bronze"]
-silver_adls = adls_paths["silver"]
-gold_adls = adls_paths["gold"] 
-
-dbutils.fs.ls(bronze_adls)
-dbutils.fs.ls(silver_adls)
-dbutils.fs.ls(gold_adls)
-
-bronze_adls,silver_adls,gold_adls
-#---------------------------------------------------------------------
-##########################################################
-#REMOVE before running Data Factory Pipeline
-##########################################################
-'''
-start_date = date.today() - timedelta(1)
-#end_date = date.today()
-#start_date, end_date
-'''
-
-##########################################################
-#ADD while running Data Factory Pipeline
-##########################################################
-#'''Get base parameters
-dbutils.widgets.text("start_date", "")
-dbutils.widgets.text("end_date", "")
-start_date = dbutils.widgets.get("start_date")
-end_date = dbutils.widgets.get("end_date")
-#'''
-#---------------------------------------------------------------------
-import requests
-import json
-from datetime import date, timedelta
-
-# Construct the API URL with start and end dates provided by Data Factory, formatted for geojson output.
-url = f"https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime={start_date}&endtime={end_date}"
-
-try:
-    # Make the GET request to fetch data
-    response = requests.get(url)
-
-    # Check if the request was successful
-    response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
-    data = response.json().get('features', [])
-
-    if not data:
-        print("No data returned for the specified date range.")
-    else:
-        # Specify the ADLS path
-        file_path = f"{bronze_adls}/{start_date}_earthquake_data.json"
-
-        # Save the JSON data
-        json_data = json.dumps(data, indent=4)
-        dbutils.fs.put(file_path, json_data, overwrite=True)
-        print(f"Data successfully saved to {file_path}")
-
-except requests.exceptions.RequestException as e:
-    print(f"Error fetching data from API: {e}")
-
-#data[0]
-
-#---------------------------------------------------------------------
-#''' Data Factory
-# Define your variables
-output_data = {
-    "start_date": start_date,
-    "end_date": end_date,
-    "bronze_adls": bronze_adls,
-    "silver_adls": silver_adls,
-    "gold_adls": gold_adls
-}
-
-# Serialize the dictionary to a JSON string
-output_json = json.dumps(output_data)
-
-# Log the serialized JSON for debugging
-print(f"Serialized JSON: {output_json}")
-
-# Return the JSON string
-dbutils.notebook.exit(output_json)
-#'''
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#                          silver
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-##########################################################
-#REMOVE before running Data Factory Pipeline
-##########################################################
-'''
-from datetime import date, timedelta
-
-# Remove this before running Data Factory Pipeline
-start_date = date.today() - timedelta(1)
-
-bronze_adls = "abfss://bronze@storeearthquake.dfs.core.windows.net/"
-silver_adls = "abfss://silver@storeearthquake.dfs.core.windows.net/"
-'''
-#---------------------------------------------------------------------
-##########################################################
-#ADD while running Data Factory Pipeline
-##########################################################
-#''' Data Factory
-import json
-
-# Retrieve the bronze_params directly as a widget
-bronze_params = dbutils.widgets.get("bronze_params")
-print(f"Raw bronze_params: {bronze_params}")
-
-# Parse the JSON string
-output_data = json.loads(bronze_params)
-
-# Access individual variables
-start_date = output_data.get("start_date", "")
-end_date = output_data.get("end_date", "")
-bronze_adls = output_data.get("bronze_adls", "")
-silver_adls = output_data.get("silver_adls", "")
-gold_adls = output_data.get("gold_adls", "")
-
-print(f"Start Date: {start_date}, Bronze ADLS: {bronze_adls}")
-#'''
-#---------------------------------------------------------------------
-from pyspark.sql.functions import col, isnull, when
-from pyspark.sql.types import TimestampType
-from datetime import date, timedelta
-#---------------------------------------------------------------------
-# Load the JSON data into a Spark DataFrame
-df = spark.read.option("multiline", "true").json(f"{bronze_adls}{start_date}_earthquake_data.json")
-#---------------------------------------------------------------------
-# Reshape earthquake data
-df = df.select(
-    "id",
-    col("geometry.coordinates").getItem(0).alias("longitude"),
-    col("geometry.coordinates").getItem(1).alias("latitude"),
-    col("geometry.coordinates").getItem(2).alias("elevation"),
-    col("properties.title").alias("title"),
-    col("properties.place").alias("place_descr"),
-    col("properties.sig").alias("sig"),
-    col("properties.mag").alias("mag"),
-    col("properties.magType").alias("magType"),
-    col("properties.time").alias("time"),
-    col("properties.updated").alias("updated"),
-)
-#---------------------------------------------------------------------
-# Validate data: Check for missing or null values
-df = (
-    df
-    .withColumn("longitude", when(isnull(col("longitude")), 0).otherwise(col("longitude")))
-    .withColumn("latitude", when(isnull(col("latitude")), 0).otherwise(col("latitude")))
-    .withColumn("time", when(isnull(col("time")), 0).otherwise(col("time")))
-)
-#---------------------------------------------------------------------
-# Convert 'time' and 'updated' from long to timestamp from Unix time
-df = (
-    df
-    .withColumn("time", (col("time") / 1000).cast(TimestampType()))
-    .withColumn("updated", (col("updated") / 1000).cast(TimestampType()))
-)
-#---------------------------------------------------------------------
-# Save the transformed DataFrame to the Silver container
-silver_output_path = f"{silver_adls}earthquake_events_silver/"
-silver_output_path
-#---------------------------------------------------------------------
-# Append DataFrame to Silver container in Parquet format
-df.write.mode('append').parquet(silver_output_path)
-#---------------------------------------------------------------------
-##########################################################
-#ADD while running Data Factory Pipeline
-##########################################################
-#''' Data Factory
-dbutils.notebook.exit(silver_output_path)
-# Supply ADF Base params: bronze_params=@string(activity('Bronze Notebook').output.runOutput)
-#'''
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#                          gold
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#---------------------------------------------------------------------
-##########################################################
-#REMOVE before running Data Factory Pipeline
-##########################################################
-'''
-from datetime import date, timedelta
-
-# Remove this before running Data Factory Pipeline
-start_date = date.today() - timedelta(1)
-
-silver_adls = "abfss://silver@storeearthquake.dfs.core.windows.net/"
-gold_adls = "abfss://gold@storeearthquake.dfs.core.windows.net/"
-silver_data = f"{silver_adls}earthquake_events_silver/"
-
-silver_data
-'''
-#---------------------------------------------------------------------
-##########################################################
-#ADD while running Data Factory Pipeline
-##########################################################
-#''' Data Factory
-import json
-
-# Retrieve the bronze_params directly as a widget
-dbutils.widgets.text("bronze_params","")
-dbutils.widgets.text("silver_params","")
-
-bronze_params = dbutils.widgets.get("bronze_params")
-silver_params = dbutils.widgets.get("silver_params")
-
-#DEBUG Print raw input values
-print(f"Raw bronze_params: {bronze_params}")
-print(f"Raw silver_params: {silver_params}")
-
-# Parse the JSON string
-bronze_date = json.loads(bronze_params)
-
-# Access individual variables
-start_date = bronze_date.get("start_date", "")
-end_date = bronze_date.get("end_date", "")
-silver_adls = bronze_date.get("silver_adls", "")
-gold_adls = bronze_date.get("gold_adls", "")
-silver_data = silver_params
-
-#Debug: print extracted values for verifiaction
-print(f"Start Date: {start_date}, End Date:: {end_date}")
-print(f"Silver ADLS Path: {silver_adls}, Gold ADLS Path: {gold_adls}")
-#---------------------------------------------------------------------
-from pyspark.sql.functions import when, col, udf
-from pyspark.sql.types import StringType
-
-# Ensure the below library is installed on your cluster udner libraries
-import reverse_geocoder as rg
-from datetime import date, timedelta
-#---------------------------------------------------------------------
-df = spark.read.parquet(silver_data).filter(col('time') > start_date)
-#---------------------------------------------------------------------
-df = df.limit(5) # added to speed up processings as during testing it was proving a bottleneck
-# The problem is caused by the Python UDF (reverse_geocoder) being a bottleneck due to its non-parallel nature and high computational cost per task
-#---------------------------------------------------------------------
-def get_country_code(lat, lon):
-    """
-    Retrieve the country code for a given latitude and longitude.
-
-    Parameters:
-        lat (float or str): Latitude of the location.
-        lon (float or str): Longitude of the location.
-
-    Returns:
-        str: Country code of the location, retrieved using the reverse geocoding API.
-
-    Example:
-        >>> get_country_details(48.8588443, 2.2943506)
-        'FR'
-    """
-    try:
-        coordinates = (float(lat), float(lon))
-        result = rg.search(coordinates)[0].get("cc")
-        print(f"Processed coordinates: {coordinates} -> {result}")
-        return result
-    except Exception as e:
-        print(f"Error processing coordinates: {lat}, {lon} -> {str(e)}")
-        return None
-#---------------------------------------------------------------------
-# registering the udfs so they can be used on spark dataframes
-get_country_code_udf = udf(get_country_code, StringType())
-#---------------------------------------------------------------------
-get_country_code(48.8588443, 2.2943506)
-#---------------------------------------------------------------------
-# adding country_code and city attributes
-df_with_location = df.withColumn(
-    "country_code", get_country_code_udf(col("latitude"), col("longitude"))
-)
-#---------------------------------------------------------------------
-# adding significance classification
-df_with_location_sig_class = df_with_location.withColumn(
-    "sig_class",
-    when(col("sig") < 100, "Low")
-    .when((col("sig") >= 100) & (col("sig") < 500), "Moderate")
-    .otherwise("High"),
-)
-#---------------------------------------------------------------------
-# Save the transformed DataFrame to the Silver container
-gold_output_path = f"{gold_adls}earthquake_events_gold/"
-#---------------------------------------------------------------------
-# Append DataFrame to Silver container in Parquet format
-df_with_location_sig_class.write.mode('append').parquet(gold_output_path)
-```
-
-### 10) Run and Verify new files in Data Storage Container
- 1. Azure portal → `storage accont` → `Data storage` → `Containers` → `gold` → `earthquake_events_gold`
- 2. New parquee file created **part-00000-tid-8139..**
-<br/>
-
-![](./docs/images/parquee-files-in-gold.png)
-<br/>
-
-### 11) Datafactory Deployment
-   1. Launch the ADF studio and create a pipeline:
-      - `Author` → `Pipelines` → `Databricks`
-      - Add 3 **Notebook** activitys (Bronze, Silver, Gold)into the pipeline
-      
-   2. Add Linked Service to Bronze notebook
-    - `Azure Databricks` → `Databricks Linked Service` → `New`
-      - Under **Edit linked service**
-      - **Connect via integration runtime**: AutoResolveIntegrationRuntime
-      - **Databricks workspace**: (Choose existing workspace)
-      - **Select cluster**: Existing interactive cluster
-      - **Existing cluster ID**: 1203-151008-8fg1r3qa  (OR WHATEVER IT IS)
-      - **Authenticate type**: Access Token
-      - Navigate to Databrick → profile icon → Settings → User → Developer → Access tokens → Manage
-      - Generate new token
-    ![](./docs/images/db-access-token.png)
-      - **Access token**: **TOKEN GOES HERE**
-      - ![](./docs/images/df-edit-linked-service.png)
-      - Click `save`
-
-   3. Configure 3 Notebooks:
-    - Add Databricks linked service (created above)
-      1. Bronze:
-        - **Notebook path**: /Users/frank@frunfola1229gmail.onmicrosoft.com/bronze
-          - Base parameters:
-            - **start_date**: @formatDateTime(addDays(utcnow(),-1),'yyyy-MM-dd')
-            - **end_date**: @formatDateTime(utcnow(),'yyyy-MM-dd')
-      2. Silver
-         - **Notebook path**: /Users/frank@frunfola1229gmail.onmicrosoft.com/silver
-          - Base parameters:
-            - **bronze_params**: @string(activity('Bronze Notebook').output.runOutput)
-      3. Gold:
-         - **Notebook path**: /Users/frank@frunfola1229gmail.onmicrosoft.com/gold
-          - Base parameters:
-            - **bronze_params**: @string(activity('Bronze Notebook').output.runOutput)
-            - **silver_params**: @string(activity('Silver Notebook').output.runOutput)
-
-  4. Chain notebooks to create a pipeline 
-      -  `bronze`, `silver`, `gold` with success dependencies.
-  5. Validate, publish, and run the pipeline.
-  6. Schedule the pipeline to run at desired intervals (e.g., daily).
-  <br/>
-  
- ![](./docs/images/df-bronze-deploy.png)
- ![](./docs/images/df-silver-deploy.png)
- ![](./docs/images/df-gold-deploy.png)
-
-### 11) Data Factory Architecture
-<br/>
-
-![](./docs/images/sec-db-to-df.png)
-
-
-<br/>
+Outputs land in `data/bronze`, `data/silver`, `data/gold`.
+
+## Configuration
+Environment variables (via `.env`):
+- `API_BASE_URL` (default: USGS endpoint)
+- `OUTPUT_DIR` (default: `data`)
+- `LOOKBACK_DAYS` (default: `1`)
+
+## Run in Azure
+ For complete setup, view `../docs/architecture/azure.mdg)`
