@@ -4,7 +4,7 @@
 This guide walks you through creating a scalable data pipeline in Azure, transforming raw data into meaningful insights using Databricks, Azure Data Factory (ADF), and Synapse Analytics.
 <br/>
 
- ![](./images/flow.png)
+ ![](./docs/images/flow.png)
 <br/>
 
 ## **What You’ll Learn**
@@ -210,12 +210,12 @@ deactivate
    5. Click `Create compute`
 <br/>
 
-   ![](./images/db-compute.png)
+   ![](./docs/images/db-compute.png)
 <br/>
 
 
 ### 6) Security Architecture
- ![](./images/sec-db-to-sa-and-df.png)  
+ ![](./docs/images/sec-db-to-sa-and-df.png)  
 
 
 ### 7) Setup Secure Connection for Databricks (DB <----- ADLS)
@@ -228,8 +228,8 @@ deactivate
      - COPY Resource ID : `/subscriptions/ca8b577e-..accessConnectors/unity-catalog-access-connector`
 <br/>
 
-  ![](./images/db-credentials.png)
-  ![](./images/sec-db.png)
+  ![](./docs/images/db-credentials.png)
+  ![](./docs/images/sec-db.png)
 <br/>
 
   #### Create External Locations
@@ -249,7 +249,7 @@ deactivate
         3. Storage Credential: `earthqual-cred` (from 5.3)
   <br/>
 
-  ![](./images/db-external-locs.png)
+  ![](./docs/images/db-external-locs.png)
 
 <br/>
 
@@ -263,7 +263,7 @@ deactivate
   5. `Select` → `Review and Assign`
 <br/>
 
-  ![](./images/sec-sa.png)
+  ![](./docs/images/sec-sa.png)
 
 <br/>
 
@@ -576,7 +576,7 @@ df_with_location_sig_class.write.mode('append').parquet(gold_output_path)
  2. New parquee file created **part-00000-tid-8139..**
 <br/>
 
-![](./images/parquee-files-in-gold.png)
+![](./docs/images/parquee-files-in-gold.png)
 <br/>
 
 ### 11) Datafactory Deployment
@@ -594,9 +594,9 @@ df_with_location_sig_class.write.mode('append').parquet(gold_output_path)
       - **Authenticate type**: Access Token
       - Navigate to Databrick → profile icon → Settings → User → Developer → Access tokens → Manage
       - Generate new token
-    ![](./images/db-access-token.png)
+    ![](./docs/images/db-access-token.png)
       - **Access token**: **TOKEN GOES HERE**
-      - ![](./images/df-edit-linked-service.png)
+      - ![](./docs/images/df-edit-linked-service.png)
       - Click `save`
 
    3. Configure 3 Notebooks:
@@ -622,14 +622,14 @@ df_with_location_sig_class.write.mode('append').parquet(gold_output_path)
   6. Schedule the pipeline to run at desired intervals (e.g., daily).
   <br/>
   
- ![](./images/df-bronze-deploy.png)
- ![](./images/df-silver-deploy.png)
- ![](./images/df-gold-deploy.png)
+ ![](./docs/images/df-bronze-deploy.png)
+ ![](./docs/images/df-silver-deploy.png)
+ ![](./docs/images/df-gold-deploy.png)
 
 ### 11) Data Factory Architecture
 <br/>
 
-![](./images/sec-db-to-df.png)
+![](./docs/images/sec-db-to-df.png)
 
 
 <br/>
